@@ -8,44 +8,50 @@ import com.jf.orm.dbobject.Triggers;
 import java.sql.*;
 import java.util.ArrayList;
 
-public class Book extends DbObject  {
+public class User extends DbObject  {
     private static Triggers activeTriggers = null;
-    private Integer bookId = null;
-    private String isbn = null;
-    private String name = null;
-    private Integer authorId = null;
+    private Integer userId = null;
+    private String firstName = null;
+    private String lastName = null;
+    private String login = null;
+    private String passwd = null;
+    private Integer isAdmin = null;
 
-    public Book(Connection connection) {
-        super(connection, "book", "book_id");
-        setColumnNames(new String[]{"book_id", "isbn", "name", "author_id"});
+    public User(Connection connection) {
+        super(connection, "user", "user_id");
+        setColumnNames(new String[]{"user_id", "first_name", "last_name", "login", "passwd", "is_admin"});
     }
 
-    public Book(Connection connection, Integer bookId, String isbn, String name, Integer authorId) {
-        super(connection, "book", "book_id");
-        setNew(bookId.intValue() <= 0);
-//        if (bookId.intValue() != 0) {
-            this.bookId = bookId;
+    public User(Connection connection, Integer userId, String firstName, String lastName, String login, String passwd, Integer isAdmin) {
+        super(connection, "user", "user_id");
+        setNew(userId.intValue() <= 0);
+//        if (userId.intValue() != 0) {
+            this.userId = userId;
 //        }
-        this.isbn = isbn;
-        this.name = name;
-        this.authorId = authorId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.login = login;
+        this.passwd = passwd;
+        this.isAdmin = isAdmin;
     }
 
     public DbObject loadOnId(int id) throws SQLException, ForeignKeyViolationException {
-        Book book = null;
+        User user = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        String stmt = "SELECT book_id,isbn,name,author_id FROM book WHERE book_id=" + id;
+        String stmt = "SELECT user_id,first_name,last_name,login,passwd,is_admin FROM user WHERE user_id=" + id;
         try {
             ps = getConnection().prepareStatement(stmt);
             rs = ps.executeQuery();
             if (rs.next()) {
-                book = new Book(getConnection());
-                book.setBookId(new Integer(rs.getInt(1)));
-                book.setIsbn(rs.getString(2));
-                book.setName(rs.getString(3));
-                book.setAuthorId(new Integer(rs.getInt(4)));
-                book.setNew(false);
+                user = new User(getConnection());
+                user.setUserId(new Integer(rs.getInt(1)));
+                user.setFirstName(rs.getString(2));
+                user.setLastName(rs.getString(3));
+                user.setLogin(rs.getString(4));
+                user.setPasswd(rs.getString(5));
+                user.setIsAdmin(new Integer(rs.getInt(6)));
+                user.setNew(false);
             }
         } finally {
             try {
@@ -54,7 +60,7 @@ public class Book extends DbObject  {
                 if (ps != null) ps.close();
             }
         }
-        return book;
+        return user;
     }
 
     protected void insert() throws SQLException, ForeignKeyViolationException {
@@ -63,28 +69,30 @@ public class Book extends DbObject  {
          }
          PreparedStatement ps = null;
          String stmt =
-                "INSERT INTO book ("+(getBookId().intValue()!=0?"book_id,":"")+"isbn,name,author_id) values("+(getBookId().intValue()!=0?"?,":"")+"?,?,?)";
+                "INSERT INTO user ("+(getUserId().intValue()!=0?"user_id,":"")+"first_name,last_name,login,passwd,is_admin) values("+(getUserId().intValue()!=0?"?,":"")+"?,?,?,?,?)";
          try {
              ps = getConnection().prepareStatement(stmt);
              int n = 0;
-             if (getBookId().intValue()!=0) {
-                 ps.setObject(++n, getBookId());
+             if (getUserId().intValue()!=0) {
+                 ps.setObject(++n, getUserId());
              }
-             ps.setObject(++n, getIsbn());
-             ps.setObject(++n, getName());
-             ps.setObject(++n, getAuthorId());
+             ps.setObject(++n, getFirstName());
+             ps.setObject(++n, getLastName());
+             ps.setObject(++n, getLogin());
+             ps.setObject(++n, getPasswd());
+             ps.setObject(++n, getIsAdmin());
              ps.execute();
          } finally {
              if (ps != null) ps.close();
          }
          ResultSet rs = null;
-         if (getBookId().intValue()==0) {
-             stmt = "SELECT max(book_id) FROM book";
+         if (getUserId().intValue()==0) {
+             stmt = "SELECT max(user_id) FROM user";
              try {
                  ps = getConnection().prepareStatement(stmt);
                  rs = ps.executeQuery();
                  if (rs.next()) {
-                     setBookId(new Integer(rs.getInt(1)));
+                     setUserId(new Integer(rs.getInt(1)));
                  }
              } finally {
                  try {
@@ -110,14 +118,16 @@ public class Book extends DbObject  {
             }
             PreparedStatement ps = null;
             String stmt =
-                    "UPDATE book " +
-                    "SET isbn = ?, name = ?, author_id = ?" + 
-                    " WHERE book_id = " + getBookId();
+                    "UPDATE user " +
+                    "SET first_name = ?, last_name = ?, login = ?, passwd = ?, is_admin = ?" + 
+                    " WHERE user_id = " + getUserId();
             try {
                 ps = getConnection().prepareStatement(stmt);
-                ps.setObject(1, getIsbn());
-                ps.setObject(2, getName());
-                ps.setObject(3, getAuthorId());
+                ps.setObject(1, getFirstName());
+                ps.setObject(2, getLastName());
+                ps.setObject(3, getLogin());
+                ps.setObject(4, getPasswd());
+                ps.setObject(5, getIsAdmin());
                 ps.execute();
             } finally {
                 if (ps != null) ps.close();
@@ -130,34 +140,31 @@ public class Book extends DbObject  {
     }
 
     public void delete() throws SQLException, ForeignKeyViolationException {
-        if (getTriggers() != null) {
-            getTriggers().beforeDelete(this);
-        }
         PreparedStatement ps = null;
         String stmt =
-                "DELETE FROM book " +
-                "WHERE book_id = " + getBookId();
+                "DELETE FROM user " +
+                "WHERE user_id = " + getUserId();
         try {
             ps = getConnection().prepareStatement(stmt);
             ps.execute();
         } finally {
             if (ps != null) ps.close();
         }
-        setBookId(new Integer(-getBookId().intValue()));
+        setUserId(new Integer(-getUserId().intValue()));
         if (getTriggers() != null) {
             getTriggers().afterDelete(this);
         }
     }
 
     public boolean isDeleted() {
-        return (getBookId().intValue() < 0);
+        return (getUserId().intValue() < 0);
     }
 
     public static DbObject[] load(Connection con,String whereCondition,String orderCondition) throws SQLException {
         ArrayList lst = new ArrayList();
         PreparedStatement ps = null;
         ResultSet rs = null;
-        String stmt = "SELECT book_id,isbn,name,author_id FROM book " +
+        String stmt = "SELECT user_id,first_name,last_name,login,passwd,is_admin FROM user " +
                 ((whereCondition != null && whereCondition.length() > 0) ?
                 " WHERE " + whereCondition : "") +
                 ((orderCondition != null && orderCondition.length() > 0) ?
@@ -167,7 +174,7 @@ public class Book extends DbObject  {
             rs = ps.executeQuery();
             while (rs.next()) {
                 DbObject dbObj;
-                lst.add(dbObj=new Book(con,new Integer(rs.getInt(1)),rs.getString(2),rs.getString(3),new Integer(rs.getInt(4))));
+                lst.add(dbObj=new User(con,new Integer(rs.getInt(1)),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),new Integer(rs.getInt(6))));
                 dbObj.setNew(false);
             }
         } finally {
@@ -177,10 +184,10 @@ public class Book extends DbObject  {
                 if (ps != null) ps.close();
             }
         }
-        Book[] objects = new Book[lst.size()];
+        User[] objects = new User[lst.size()];
         for (int i = 0; i < lst.size(); i++) {
-            Book book = (Book) lst.get(i);
-            objects[i] = book;
+            User user = (User) lst.get(i);
+            objects[i] = user;
         }
         return objects;
     }
@@ -192,7 +199,7 @@ public class Book extends DbObject  {
         boolean ok = false;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        String stmt = "SELECT book_id FROM book " +
+        String stmt = "SELECT user_id FROM user " +
                 ((whereCondition != null && whereCondition.length() > 0) ?
                 "WHERE " + whereCondition : "");
         try {
@@ -210,64 +217,81 @@ public class Book extends DbObject  {
     }
 
     //public String toString() {
-    //    return getBookId() + getDelimiter();
+    //    return getUserId() + getDelimiter();
     //}
 
     public Integer getPK_ID() {
-        return bookId;
+        return userId;
     }
 
     public void setPK_ID(Integer id) throws ForeignKeyViolationException {
         boolean prevIsNew = isNew();
-        setBookId(id);
+        setUserId(id);
         setNew(prevIsNew);
     }
 
-    public Integer getBookId() {
-        return bookId;
+    public Integer getUserId() {
+        return userId;
     }
 
-    public void setBookId(Integer bookId) throws ForeignKeyViolationException {
-        setWasChanged(this.bookId != null && this.bookId != bookId);
-        this.bookId = bookId;
-        setNew(bookId.intValue() == 0);
+    public void setUserId(Integer userId) throws ForeignKeyViolationException {
+        setWasChanged(this.userId != null && this.userId != userId);
+        this.userId = userId;
+        setNew(userId.intValue() == 0);
     }
 
-    public String getIsbn() {
-        return isbn;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setIsbn(String isbn) throws SQLException, ForeignKeyViolationException {
-        setWasChanged(this.isbn != null && !this.isbn.equals(isbn));
-        this.isbn = isbn;
+    public void setFirstName(String firstName) throws SQLException, ForeignKeyViolationException {
+        setWasChanged(this.firstName != null && !this.firstName.equals(firstName));
+        this.firstName = firstName;
     }
 
-    public String getName() {
-        return name;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setName(String name) throws SQLException, ForeignKeyViolationException {
-        setWasChanged(this.name != null && !this.name.equals(name));
-        this.name = name;
+    public void setLastName(String lastName) throws SQLException, ForeignKeyViolationException {
+        setWasChanged(this.lastName != null && !this.lastName.equals(lastName));
+        this.lastName = lastName;
     }
 
-    public Integer getAuthorId() {
-        return authorId;
+    public String getLogin() {
+        return login;
     }
 
-    public void setAuthorId(Integer authorId) throws SQLException, ForeignKeyViolationException {
-        if (authorId!=null && !Author.exists(getConnection(),"author_id = " + authorId)) {
-            throw new ForeignKeyViolationException("Can't set author_id, foreign key violation: book_author_fk");
-        }
-        setWasChanged(this.authorId != null && !this.authorId.equals(authorId));
-        this.authorId = authorId;
+    public void setLogin(String login) throws SQLException, ForeignKeyViolationException {
+        setWasChanged(this.login != null && !this.login.equals(login));
+        this.login = login;
+    }
+
+    public String getPasswd() {
+        return passwd;
+    }
+
+    public void setPasswd(String passwd) throws SQLException, ForeignKeyViolationException {
+        setWasChanged(this.passwd != null && !this.passwd.equals(passwd));
+        this.passwd = passwd;
+    }
+
+    public Integer getIsAdmin() {
+        return isAdmin;
+    }
+
+    public void setIsAdmin(Integer isAdmin) throws SQLException, ForeignKeyViolationException {
+        setWasChanged(this.isAdmin != null && !this.isAdmin.equals(isAdmin));
+        this.isAdmin = isAdmin;
     }
     public Object[] getAsRow() {
-        Object[] columnValues = new Object[4];
-        columnValues[0] = getBookId();
-        columnValues[1] = getIsbn();
-        columnValues[2] = getName();
-        columnValues[3] = getAuthorId();
+        Object[] columnValues = new Object[6];
+        columnValues[0] = getUserId();
+        columnValues[1] = getFirstName();
+        columnValues[2] = getLastName();
+        columnValues[3] = getLogin();
+        columnValues[4] = getPasswd();
+        columnValues[5] = getIsAdmin();
         return columnValues;
     }
 
@@ -284,16 +308,18 @@ public class Book extends DbObject  {
     public void fillFromString(String row) throws ForeignKeyViolationException, SQLException {
         String[] flds = splitStr(row, delimiter);
         try {
-            setBookId(Integer.parseInt(flds[0]));
+            setUserId(Integer.parseInt(flds[0]));
         } catch(NumberFormatException ne) {
-            setBookId(null);
+            setUserId(null);
         }
-        setIsbn(flds[1]);
-        setName(flds[2]);
+        setFirstName(flds[1]);
+        setLastName(flds[2]);
+        setLogin(flds[3]);
+        setPasswd(flds[4]);
         try {
-            setAuthorId(Integer.parseInt(flds[3]));
+            setIsAdmin(Integer.parseInt(flds[5]));
         } catch(NumberFormatException ne) {
-            setAuthorId(null);
+            setIsAdmin(null);
         }
     }
 }
